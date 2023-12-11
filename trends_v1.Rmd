@@ -12,6 +12,14 @@ library(data.table); library(tidyverse)
 load("mort.rda")
 
 mort <- as.data.table(mort)
+
+icd_10_codes <- as.data.table(read.delim("icd10_prueba.txt", header=F, sep="",dec=".") %>%
+        mutate(description=str_c(V2, " ", V3, " ", V4, " ", V5, " ", V6,
+                                 " ", V7)) %>% 
+        rename(code=V1) %>% 
+        select(code, description)) %>% 
+        mutate(code=str_remove(code, "[.]"))
+        
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
@@ -21,14 +29,40 @@ When you save the notebook, an HTML file containing the code and output will be 
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
 ```{r modificacion de dataframe, include = F}
-mort_mod <- mort[,`:=`(fecha_defuncion:=dmy(fecha_defu),
-                       ano_defuncion:=year(fecha_defuncion),
+mort_mod <- mort[,`:=`(fecha_defuncion=dmy(fecha_defu),
+                       ano_defuncion=year(fecha_defuncion),
+                       fecha_nacimiento=dmy(fecha_nace),
+                       sexo_biologico=case_when(defsexo==1~"hombre",
+                                                defsexo==2~"mujer",
+                                                defsexo==0|defsexo==9~"no_especificado"),
+                       nacionalidad=case_when(defnacion==1~"mexicana",
+                                              defnacion==2~"extranjera",
+                                              defnacion==0|defnacion==9~"no_especificado")
                        )]
 ```
 
+##*Catálogo de variables*
+No estoy al 100% seguro de lo que representan todas estas variables. Pero en base al contexto y a los documentos que me pasó la dra yanink colocaré las definiciones más probables. También pondré si con alguna si estoy 100% seguro y si con alguna no, etc. 
 
-```{r}
+Aquí estoy incluyendo la versión "limpia" de las variables, con los nuevos nombres que les asigné
+-secuencia:muert
 
+```{r join dataframe of deaths and of icd 10 codes, include = F}
+mort_mod<- mort_mod[, code:=defcausa][,code:=ifelse(endsWith(code,"x"),
+                                                    str_remove(code,"x"),code)][,code:=ifelse(
+        endsWith(code,"X")&!startsWith(code,"X"),
+        str_remove(code,"X"),code
+)][,code:=ifelse(endsWith(code,"00"),str_replace(code, "00","0"),code)][
+        ,code:=ifelse(startsWith(code, "b"), str_replace(code, "b", "B"), code)
+]
+
+mort_icd <- icd_10_codes[mort_mod, on=c("code")]
+
+#La gran mayoría de los que siguen sin tener código son porque el código está en blanco ("")
+#Se puede arreglar al match quitando el último caracter del string
+ej <- mort_icd[is.na(description)][,code:=ifelse(code!="",str_sub(code,1,3),code)][,c("code", "description")]
+
+
+mort_icd_2 <- ej[mort_mod, on=c("code")]
 ```
-
 
