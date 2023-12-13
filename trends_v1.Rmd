@@ -30,7 +30,7 @@ The preview shows you a rendered HTML copy of the contents of the editor. Conseq
 
 ```{r modificacion de dataframe, include = F}
 mort_mod <- mort[,`:=`(fecha_defuncion=dmy(fecha_defu),
-                       ano_defuncion=year(fecha_defuncion),
+                       ano_defuncion=year(dmy(fecha_defu)),
                        fecha_nacimiento=dmy(fecha_nace),
                        sexo_biologico=case_when(defsexo==1~"hombre",
                                                 defsexo==2~"mujer",
@@ -41,13 +41,56 @@ mort_mod <- mort[,`:=`(fecha_defuncion=dmy(fecha_defu),
                        )]
 ```
 
+
+```{r classification of causes of death based on the previous manuscript, include=F}
+#Esto lo tengo que tomar como un objeto para usar a manera de startsWith. No todos los códigos de CIE10 están en extenso
+unacceptable_causes <- c("A630", "B081", "B20","B20X","B201" ,"B207", "B208", "B209",  
+                                "B220","B222", "B227",  "B232","B238", "B24",  "B24X", "B330",  
+                                "B349", "B368", "B421", "B441", "B447", "B448", "B852", "B872", 
+                                str_c("D",50:53),"D649", "D65X", "E162", 
+                                str_c("E",40:46),str_c("E",50:64),
+                                "E83", "E86X","E87","E872", "E874", "E878", "E88",
+                                str_c("F0",0:9),"F59","G009","G03","G04","G039","G40",
+                                "G41","G43","G47",str_c("G",50:61),"G629",
+                                "G81","G83","G91","G931","G932","G934", "G935", "G936", "G938",
+                                "G939", str_c("G",94:99),
+                                str_c("H0",0:4),"H052","H053","H054","H058","H059","H060",
+                                "H062","H063","H10",
+                                "H11","H13",str_c("H",15:20),"H22",
+                                str_c("H",25:28),str_c("H",30:36),str_c("H",40:42),
+                                str_c("H",43:45),str_c("H",46:48),str_c("H",49:52),"H53","H54",
+                                str_c("H",55:59),str_c("H",60:62),str_c("H",65:75),str_c("H",80:83),
+                                str_c("H",90:95),str_c("I",44:51),str_c("I",83:89),str_c("I",95:97),
+                                "I982","I983","I988","I99",str_c("J",30:35),"J324","J359","J80X",  
+                                "J81X","J849", str_c("J",90:95),"J960", "J961", "J967", "J969", 
+                                "J980", "J981", "J984", "J988", str_c("K0",0:9),"K10",
+                                "K20", "K30", "K31", "K560", "K566", "K567", "K58", "K59", "K631",
+                                "K635", "K639", "K65", "K72", "K720", "K721", "K729",
+                                "K739", "K746", "K76", "K909", "K91", "K92", "K938",
+                                str_c("L", 20:30),str_c("L", 60:75),str_c("L", 89:91),
+                                "L95", "L97", "M014", "M015", str_c("M", 40:43),str_c("M", 50:54),
+                                "M464", "M47", "M48","M601", "M602", "M608", "M609", "M620", "M621",
+                                str_c("M",623:629),str_c("M",652:654),"M658", "M659","M646",
+                                "M66", "M67", "M70", str_c("M",712:714), "M718","M719",
+                                "M72", "M75", "M76", "M77",str_c("M",80:85),str_c("M90",3:8),
+                                str_c("M",91:99),str_c("N",17:19),str_c("N",20:23),str_c("N",25:27),
+                                str_c("N",30:32),str_c("N",34:37),"N40",str_c("N",42:44),"N46","N47",
+                                "N62", str_c("R", 0:100),"Z21X","Z753X")  
+
+
+```
+
+
 ##*Catálogo de variables*
 No estoy al 100% seguro de lo que representan todas estas variables. Pero en base al contexto y a los documentos que me pasó la dra yanink colocaré las definiciones más probables. También pondré si con alguna si estoy 100% seguro y si con alguna no, etc. 
 
 Aquí estoy incluyendo la versión "limpia" de las variables, con los nuevos nombres que les asigné
 -secuencia:muert
 
-```{r join dataframe of deaths and of icd 10 codes, include = F}
+
+
+
+```{r join dataframe of deaths and of text icd 10 codes, include = F}
 mort_mod<- mort_mod[, code:=defcausa][,code:=ifelse(endsWith(code,"x"),
                                                     str_remove(code,"x"),code)][,code:=ifelse(
         endsWith(code,"X")&!startsWith(code,"X"),
@@ -56,13 +99,17 @@ mort_mod<- mort_mod[, code:=defcausa][,code:=ifelse(endsWith(code,"x"),
         ,code:=ifelse(startsWith(code, "b"), str_replace(code, "b", "B"), code)
 ]
 
-mort_icd <- icd_10_codes[mort_mod, on=c("code")]
+mort_icd <- icd_10_codes[mort_mod, on="code"]
+
+mort_icd_mod <- mort_icd[,code:=ifelse(is.na(description)&code!="",str_sub(code,1,3),code)]
+
+mort_icd_mod_2 <- icd_10_codes[mort_icd_mod, on="code"][,i.description:=NULL]
 
 #La gran mayoría de los que siguen sin tener código son porque el código está en blanco ("")
 #Se puede arreglar al match quitando el último caracter del string
 ej <- mort_icd[is.na(description)][,code:=ifelse(code!="",str_sub(code,1,3),code)][,c("code", "description")]
 
+ej_2 <- as.data.table(merge(ej, icd_10_codes[,code:=ifelse(code!="",str_sub(code,1,3),code)], by="code", all.x=T))
 
-mort_icd_2 <- ej[mort_mod, on=c("code")]
 ```
 
