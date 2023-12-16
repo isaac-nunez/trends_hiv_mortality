@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  word_document: default
+  html_notebook: default
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
@@ -8,7 +10,7 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r setup}
-library(data.table); library(tidyverse)
+library(data.table); library(tidyverse);library(flextable)
 load("mort.rda")
 
 mort <- as.data.table(mort)
@@ -28,7 +30,7 @@ When you save the notebook, an HTML file containing the code and output will be 
 
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
-```{r modificacion de dataframe, include = F}
+```{r modificacion de dataframe, include = F, eval=F}
 mort_mod <- mort[,`:=`(fecha_defuncion=dmy(fecha_defu),
                        ano_defuncion=year(dmy(fecha_defu)),
                        fecha_nacimiento=dmy(fecha_nace),
@@ -42,9 +44,9 @@ mort_mod <- mort[,`:=`(fecha_defuncion=dmy(fecha_defu),
 ```
 
 
-```{r classification of causes of death based on the previous manuscript, include=F}
+```{r classification of causes of death based on the previous manuscript, include=F, eval=F}
 #Esto lo tengo que tomar como un objeto para usar a manera de startsWith. No todos los códigos de CIE10 están en extenso
-unacceptable_causes <- c("A630", "B081", "B20","B20X","B201" ,"B207", "B208", "B209",  
+causas_inaceptables <- c("A630", "B081", "B20","B20X","B201" ,"B207", "B208", "B209",  
                                 "B220","B222", "B227",  "B232","B238", "B24",  "B24X", "B330",  
                                 "B349", "B368", "B421", "B441", "B447", "B448", "B852", "B872", 
                                 str_c("D",50:53),"D649", "D65X", "E162", 
@@ -77,8 +79,184 @@ unacceptable_causes <- c("A630", "B081", "B20","B20X","B201" ,"B207", "B208", "B
                                 str_c("N",30:32),str_c("N",34:37),"N40",str_c("N",42:44),"N46","N47",
                                 "N62", str_c("R", 0:100),"Z21X","Z753X")  
 
-
+causas_potencialmente_aceptables <- c("B20", "B20X", "B201",str_c("B",207:209),
+"B220", "B222", "B227","B232", "B238", "B24", "B24X", "E162", "G009", "G03", "G04", "G039",  
+"G40", "G41","I50", "I84", "K631","K65","K72","K720", "K721","K729", 
+str_c("N",17:19), str_c("R",570:572), "R578")
+        
 ```
+
+```{r coding causes of death into simplified categories as lists, include = F, eval=F}
+
+aids_deaths <- list(pneumonia_recurrent=list(unspecified_pneumonia=c( str_c("J0",0:6), "J12", "J128", "J129", "J158", "J159", "J168", "J170", "J18", "J208", "J209", "J219", "J22", "J40", "J80", "J81", str_c("J",850:852), "J86", "J960", "J967", "J969", "J988", "R06", "R09")),
+                            tuberculosis=list(tuberculosis=str_c("A",15:19)),
+                            opportunistic_infections=list(pneumocystis=c("B206", "B59"),
+                                                          coccidioidomycosis=c("B38", "A073"),
+                                                          cryptosporidiosis="A07.2",
+                                                          toxoplasmosis=c("B580", "B581", "B582", "B583", "B588", "B589", "G052", "H320"),
+                                                          cryptococcosis="B45.X",
+                                                          encephalopathy=c("A811", "A85", "A86", "A87", "A89", "B220", "B582", "G051"),
+                                                          candidiasis=c("B37.1", "B379", "B204", "B375"),
+                                                          histoplasmosis=c("B39.2", "B393", "B394", "B399"),
+                                                          cytomegalovirus=c("B202", "B25"),
+                                                          leukoencephalopathy="A812",
+                                                          mycobacterium_avium_complex="A31",
+                                                          salmonella=c("A01","A02", "B201", "M013"),
+                                                          herpes_simplex=c("A60", "B00")
+                                                          ),
+                            aids_malignancies=list(aids_degining_cancers=c("B21", "B211", "B212", "B213", "B217", "B218", "B219"),
+                                                   kaposi_sarcoma=c("B210", "C46")),
+                            other=list(wasting=c("B222", "E43"),
+                                       unspecified_hiv=c("B22", "B24"),
+                                       aids_other=c("B207", "B208", "B209", "B20X", "B227", "B23", "B333", "B89X", "M016", "M018", "R75"))
+                            )
+
+non_aids_deaths <- list(non_aids_infectious_diseases=list(
+        bacterial_sepsis=c("A40", "A41", "A42", "A24", "P368", "P369"),
+        other_sepsis=c("A41", "R579"),
+        non_aids_respiratory_infection=c("B402", "B953", "B960", "J09", "J10", "J11", "J120", 
+                                         "J121", "J122", "J123", "J13", "J14", str_c("J",150:157),
+                                         "J160", "J17.8", str_c("J",200:207)),
+        various_bacterial_infections=c("A00", str_c("A0",40:47), "A05", str_c("A",20:28), "A36", "A390",
+                                       str_c("A",398:399), "A42", "A43", "A44", "A49", str_c("A",51:53),
+                                       "B95", str_c("B",961:969), "G00", str_c("I0",0:2), "I30", "I33",
+                                       "I38", "I430", "I520", "I521", "I80", "K122", "K61", "K630",
+                                       "K631", "K632", "K633", "K65", str_c("L0",0:8), "I790", "I791",
+                                       "I870", "I980", "I981", "M00", "M10", "M012", "M463", "M464",
+                                       "M491", "M492", "M600", "M609", "M650", "M651", "M710", "M711",
+                                       "M86", "M901", "M902", "N10", "N151", "N160", "N290", "N300",
+                                       "N34", "N390", "N41", "N45", "N49", "N51", "N61",
+                                       str_c("N",70:77), "R02", "R100", "R104", "R30", "R36", "R50")
+),
+liver_diseases=list(liver_failure=c("B189", "B199", "B942", "I85", "I864", "I982", "I983"),
+                    hepatitis=c("B182", "B170", "B171", "B16")),
+vascular_heart_diseases=list(
+        heart_or_vascular=c(str_c("I0",5:9), str_c("I",10:15), "I30", "I31", "I321", "I328",
+                            str_c("I",33:36), "I38", "I40", "I410", "I412", "I418", "I42", "I430", "I431", "I432", "I438", "I520", "I521", "I528", str_c("I",60:71), str_c("I",720:726), "I728", "I729", "I73", "I74", "I77", "I78", "I790", "I791", "I792", "I798", "I80", "I81", "I82", "I980", "I981", "R02", "R03", "R07"),
+        ischaemic_heart=c(str_c("I",20:25), "I21.9"),
+        stroke=c("G45", "G46", "M622")),
+non_vascular_neurologic_diseases=list(
+        cns_diseases=c("A82", "A85", "A87", "A89", str_c("G",10:14), str_c("G",20:26), "G30", "G310", "G311", "G318", "G319", "G80", str_c("G",90:99), str_c("H",46:48), str_c("H",53:55), "R44", str_c("R",47:49), "R55", "R56"),
+        polyneuropathies=c("G61", "G622", "G628", "G629"),
+        demyelinating_disorders=str_c("G",35:37),
+        other_ns_disorders=c("G43", "G44", "G47", "G52", "G90", "G937", "G938", "M494", str_c("R",25:29), "R43"),
+        neuromuscular=str_c("G", 70:73)
+),
+mental_health=list(substance_abuse=c(str_c("F",11:19, "G620", "G92")),
+                   alcohol_abuse=c("F10", "G312", "G621", "K70", "K860"),
+                   psychiatric_disease=c(str_c("F",20:29), str_c("F",30:39), str_c("F",40:48), str_c("F",50:55), str_c("F",60:99), "R45", "R46", "R636"),
+                   suicide=str_c("X", 60:84)
+),
+non_aids_malignancies=list(
+        general_malignancies=c("C17", "C26", "C37", "C38", "C44", "C45", "C47", "C48", "C63", str_c("C",73:76), "C784", "C786", "C788", "C792", str_c("C",797:799), str_c("D0",0:9), str_c("D",10:48), "C80", "I871", "N161"),
+        colon_cancer="C18"
+),
+gastrointestinal_disorders=list(
+        miscelaneous_digestive_disorders=c(str_c("K0",0:9), "K10", "K21", "K22", "K238", str_c("K",26:31), str_c("K",35:38), str_c("K",40:46), "K50", str_c("K",510:518), "K52", "K55", "K560", "K562", str_c("K", 563:565), "K566", "K567", "K57", "K58", "K59", "K60", "K62", "K634", "K635", "K638", "K639", "K64", "K66", "K870", "K900", "K902", "K904", "K908", "K909", "K938", "R101", "R103", str_c("R", 11:15), str_c("R",191:198), str_c("R", 20:23)
+),
+pancreatitis=c("K85", str_c("K", 861:869), "K903")
+),
+endocrine_disorders=list(
+        miscelaneous_endocrine=c(str_c("E0",0:7), "E15","E16", str_c("E",20:35)),
+        diabetes=c(str_c("E",10:14), "R631", "R632", "R73")
+),
+renal_failure=list(
+        miscelaneous_renal_failure=c("G638", "M908", str_c("N0",0:8), str_c("N",11:13), "N150", "N158", "N159", str_c("N",161:168), str_c("N",17:19), str_c("N",25:28), "R34")
+),
+violent_deaths=list(
+        miscelaneous_violent_deaths=c("H055", "N350", "R571", "R58", str_c("S0",0:9), str_c("S",10:99), str_c("T0",0:9), str_c("T",10:19), "T71", "T75", "T79", str_c("T",90:98), str_c("V0",1:9), str_c("V",10:99),
+                                      str_c("X0",0:9), str_c("X",10:59), str_c("X",85:99),str_c("Y0",0:9),
+                                      str_c("Y",10:36), str_c("Y",85:98))
+),
+unclassifiable_unknown_deaths=list(
+        unclassifiable_causes=c("E86", "E87", str_c("H",71:74), "I849", "I860", "I862", "I863",
+                                "I868", "I978", "I979", "J95", "K91", "L89", "L95", "M624", 
+                                "R102", "R52", "R53", "R54", "R61", "R62", "R630", "R635", "R638",
+                                "R79"),
+        unknown=c("R68", "R69", "R98", "R99")
+),
+non_aids_hematological=list(
+        hematological=c(str_c("D",50:89), "E85", "M904", "N162", "R70", "R71", "R72")
+),
+other_non_infectious=list(
+        miscelaneous_non_infectious=c(str_c("E",65:68), str_c("E",70:80), "E83", "E84", "E88",
+                                      str_c("H0",0:4), "H058", "H059", "H060", "H062", "H063",
+                                      str_c("H10",1:5), "H108", "H109", "H11", "H132", "H133",
+                                      "H138", "H163", "H164", "H168", "H169", "H17", "H18", 
+                                      "H193", "H198", "H20", "H21", "H221", "H228", str_c("H",25:28), str_c("H",30:36), str_c("H",40:42), "H4", str_c("H",441:449), "H45", str_c("H",49:52), "H57","H59", "H61", "H65","H68", "H69", "H71", "I328", "I78", "I89", "J30",
+                                      "J31", "J32", "J324", str_c("J",33:35), "J359", "L93", 
+                                      "L94", "M79", "N298", "N60", "R760", "R762", "R768", 
+                                      "R769", "R77", str_c("T",20:32), str_c("T",33:39), 
+                                      str_c("T",44:49), "T50", str_c("T",52:69), "T70", "T73", 
+                                      "T78", str_c("T",80:88), str_c("W0",0:9),str_c("W", 10:99),
+        str_c("X0",0:9), str_c("X",10:59), "X950", str_c("Y",10:34), str_c("Y",40:84)),
+        urogenital=c("N13", str_c("N",20:23), str_c("N",301:304), "N308", "N309", "N32", "N338",
+                     "N358", "N359", "N36", "N378", str_c("N",391:399), "N40", "N42", "N43", "N44",
+                     "N46", "N47", "N48", str_c("N",80:99), str_c("R",31:33), "R35", "R39"),
+        skin_motor_miscelaneous=c(str_c("L",10:14),str_c("L",20:30), str_c("L",40:45), str_c("L",50:54), str_c("L",55:59), str_c("L",60:75), str_c("L",80:88), str_c("L",90:92), "L95", "L98", "M02", "M03",
+                                  str_c("M",05:14), str_c("M",15:19), str_c("M",20:25), str_c("M",30:36), str_c("M",40:43), "M45", "M461", "M468", "M601", "M47", "M48", "M498", str_c("M",50:54), "M602", 
+                                  "M608", "M620", "M621", "M626", "M628", "M629", "M652", "M653", "M654", "M658", "M659", "M66", "M67", "M70", str_c("M",712:719), "M72", str_c("M",75:77), str_c("M",80:85),
+                                  str_c("M",87:89), "M903", "M905", str_c("M",91:99), "N31")
+)
+)
+                                      
+```
+
+```{r coding causes of death into simplified categories as a single dataframe, include = F, eval=F}
+
+all_deaths <- c(aids_deaths,non_aids_deaths)
+
+
+aids_deaths_categories <- objects(aids_deaths)
+
+
+#Aids deaths
+for(i in 1:length(all_deaths)){
+        
+        for(j in 1:length(all_deaths[[i]])){
+
+                        if(i==1&j==1){
+                                
+                        death_causes <-  data.table(
+                                aids_related=ifelse(objects(all_deaths[i])%in%aids_deaths_categories, "aids_related", "not_aids_related"),
+                                major_category=objects(all_deaths[i]),
+                                specific_category=objects(all_deaths[[i]][j]),
+                                icd_10_code=all_deaths[[i]][[j]])        
+                        }else{
+                        
+                                death_causes <- rbind(death_causes,
+                                                      data.table(
+                                aids_related=ifelse(objects(all_deaths[i])%in%aids_deaths_categories, "aids_related", "not_aids_related"),
+                                major_category=objects(all_deaths[i]),
+                                specific_category=objects(all_deaths[[i]][j]),
+                                icd_10_code=all_deaths[[i]][[j]]))        
+                                
+                        }
+                
+                
+        }
+        
+        
+}
+
+#Algunos códigos se repiten porque los tengo en dos categorías, tengo que modificar esto
+ej <- group_by(death_causes, icd_10_code) %>% 
+        count() %>% 
+        filter(n>1)
+
+
+ej_2 <- filter(death_causes, icd_10_code%in%ej$icd_10_code)
+
+save(ej_2, file="ej_2.Rda")
+                                      
+```
+
+
+```{r algoritmo de causas de muertes}
+load("ej_2.Rda")
+flextable(ej_2)
+```
+
 
 
 ##*Catálogo de variables*
@@ -90,7 +268,7 @@ Aquí estoy incluyendo la versión "limpia" de las variables, con los nuevos nom
 
 
 
-```{r join dataframe of deaths and of text icd 10 codes, include = F}
+```{r join dataframe of deaths and of text icd 10 codes, include = F,eval=F}
 mort_mod<- mort_mod[, code:=defcausa][,code:=ifelse(endsWith(code,"x"),
                                                     str_remove(code,"x"),code)][,code:=ifelse(
         endsWith(code,"X")&!startsWith(code,"X"),
