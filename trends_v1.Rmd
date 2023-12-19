@@ -248,6 +248,152 @@ ej <- group_by(death_causes, icd_10_code) %>%
 ej_2 <- filter(death_causes, icd_10_code%in%ej$icd_10_code)
 
 save(ej_2, file="ej_2.Rda")
+
+#Codigos que se repetían y que reclasifiqué:
+reclasified_codes <- data.table(
+        aids_related=c(rep("aids_related", times=4),
+                       rep("not_aids_related", times= 125)),
+        major_category=c(rep("opportunistic_infections", times=4),
+                         rep("non_aids_infectious_diseases", times=11),
+                         rep("vascular_heart_diseases", times=7),
+                         "non_vascular_neurologic_diseases",
+                         "non_aids_malignancies",
+                         "renal_failure",
+                         "renal_failure",
+                         rep("violent_deaths", times=35),
+                         rep("other_non_infectious", times=68)),
+        specific_category=c("toxoplasmosis", rep("encephalopathy",times=3),
+                            "other_sepsis", rep("various_bacterial_infections", times=10),
+                            rep("heart_or_vascular", times=7),
+                            "other_ns_disorders","general_malignancies",
+                            rep("miscelaneous_renal_failure",times=2),
+                            rep("miscelaneous_violent_deaths",times=35),
+                            rep("miscelaneous_non_infectious",times=66),
+                            rep("skin_motor_miscelaneous",times=2),
+                            icd_10_code=c("B582","A85","A87","A89","A41","A24",
+                                          "A42","B968","I33","I38", "I430","I520",
+                                          "I521","I980","R02","I30"
+I328
+I78
+I790
+I791
+I80
+I981
+G90
+N161
+N13
+N162
+X00
+X01
+X02
+X03
+X04
+X05
+X06
+X07
+X08
+X09
+X10
+X11
+X12
+X13
+X14
+X15
+X16
+X17
+X18
+X59
+Y20
+Y21
+Y22
+Y23
+Y24
+Y25
+Y26
+Y27
+Y28
+Y29
+Y30
+Y31
+Y32
+Y33
+Y34
+H71
+I328
+I78
+X07
+X08
+X09
+X10
+X11
+X12
+X13
+X14
+X15
+X16
+X17
+X18
+X19
+X20
+X21
+X22
+X23
+X24
+X25
+X26
+X27
+X28
+X29
+X30
+X31
+X32
+X33
+X34
+X35
+X36
+X37
+X38
+X39
+X40
+X41
+X42
+X43
+X44
+X45
+X46
+X47
+X48
+X49
+X50
+X51
+X52
+X53
+X54
+X55
+X56
+X57
+X58
+X59
+Y10
+Y11
+Y12
+Y13
+Y14
+Y15
+Y16
+Y17
+Y18
+Y19
+L95
+M10
+
+                            ))
+
+
+
+
+
+
                                       
 ```
 
