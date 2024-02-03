@@ -5,11 +5,9 @@ output:
   html_notebook: default
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
-```{r setup}
+```{r setup, include = F}
 library(data.table); library(tidyverse);library(flextable)
 load("mort.rda")
 
@@ -24,13 +22,9 @@ icd_10_codes <- as.data.table(read.delim("icd10_prueba.txt", header=F, sep="",de
         
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
-```{r modificacion de dataframe, include = F, eval=F}
+```{r modificacion de dataframe, include = F, eval=T}
 mort_mod <- mort[,`:=`(fecha_defuncion=dmy(fecha_defu),
                        ano_defuncion=year(dmy(fecha_defu)),
                        fecha_nacimiento=dmy(fecha_nace),
@@ -44,7 +38,7 @@ mort_mod <- mort[,`:=`(fecha_defuncion=dmy(fecha_defu),
 ```
 
 
-```{r classification of causes of death based on the previous manuscript, include=F, eval=F}
+```{r classification of causes of death based on the previous manuscript, include=F, eval=T}
 #Esto lo tengo que tomar como un objeto para usar a manera de startsWith. No todos los códigos de CIE10 están en extenso
 causas_inaceptables <- c("A630", "B081", "B20","B20X","B201" ,"B207", "B208", "B209",  
                                 "B220","B222", "B227",  "B232","B238", "B24",  "B24X", "B330",  
@@ -86,7 +80,7 @@ str_c("N",17:19), str_c("R",570:572), "R578")
         
 ```
 
-```{r coding causes of death into simplified categories as lists, include = F, eval=F}
+```{r coding causes of death into simplified categories as lists, include = F, eval=T}
 
 aids_deaths <- list(pneumonia_recurrent=list(unspecified_pneumonia=c( str_c("J0",0:6), "J12", "J128", "J129", "J158", "J159", "J168", "J170", "J18", "J208", "J209", "J219", "J22", "J40", "J80", "J81", str_c("J",850:852), "J86", "J960", "J967", "J969", "J988", "R06", "R09")),
                             tuberculosis=list(tuberculosis=str_c("A",15:19)),
@@ -252,7 +246,7 @@ save(ej_2, file="ej_2.Rda")
 #Codigos que se repetían y que reclasifiqué:
 reclasified_codes <- data.table(
         aids_related=c(rep("aids_related", times=4),
-                       rep("not_aids_related", times= 125)),
+                       rep("not_aids_related", times= 110)),
         major_category=c(rep("opportunistic_infections", times=4),
                          rep("non_aids_infectious_diseases", times=11),
                          rep("vascular_heart_diseases", times=7),
@@ -260,140 +254,39 @@ reclasified_codes <- data.table(
                          "non_aids_malignancies",
                          "renal_failure",
                          "renal_failure",
-                         rep("violent_deaths", times=35),
-                         rep("other_non_infectious", times=68)),
+                         rep("violent_deaths", times=34),
+                         rep("other_non_infectious", times=54)),
         specific_category=c("toxoplasmosis", rep("encephalopathy",times=3),
                             "other_sepsis", rep("various_bacterial_infections", times=10),
                             rep("heart_or_vascular", times=7),
                             "other_ns_disorders","general_malignancies",
                             rep("miscelaneous_renal_failure",times=2),
-                            rep("miscelaneous_violent_deaths",times=35),
-                            rep("miscelaneous_non_infectious",times=66),
-                            rep("skin_motor_miscelaneous",times=2),
+                            rep("miscelaneous_violent_deaths",times=34),
+                            rep("miscelaneous_non_infectious",times=52),
+                            rep("skin_motor_miscelaneous",times=2)),
                             icd_10_code=c("B582","A85","A87","A89","A41","A24",
                                           "A42","B968","I33","I38", "I430","I520",
-                                          "I521","I980","R02","I30"
-I328
-I78
-I790
-I791
-I80
-I981
-G90
-N161
-N13
-N162
-X00
-X01
-X02
-X03
-X04
-X05
-X06
-X07
-X08
-X09
-X10
-X11
-X12
-X13
-X14
-X15
-X16
-X17
-X18
-X59
-Y20
-Y21
-Y22
-Y23
-Y24
-Y25
-Y26
-Y27
-Y28
-Y29
-Y30
-Y31
-Y32
-Y33
-Y34
-H71
-I328
-I78
-X07
-X08
-X09
-X10
-X11
-X12
-X13
-X14
-X15
-X16
-X17
-X18
-X19
-X20
-X21
-X22
-X23
-X24
-X25
-X26
-X27
-X28
-X29
-X30
-X31
-X32
-X33
-X34
-X35
-X36
-X37
-X38
-X39
-X40
-X41
-X42
-X43
-X44
-X45
-X46
-X47
-X48
-X49
-X50
-X51
-X52
-X53
-X54
-X55
-X56
-X57
-X58
-X59
-Y10
-Y11
-Y12
-Y13
-Y14
-Y15
-Y16
-Y17
-Y18
-Y19
-L95
-M10
-
-                            ))
+                                          "I521","I980","R02","I30","I328","I78",
+                                          "I790","I791","I80","I981","G90","N161",
+                                          "N13","N162","X00","X01","X02","X03",
+                                          "X04","X05","X06","X07","X08","X09",
+                                          "X10","X11","X12","X13","X14","X15",
+                                          "X16","X17","X18",
+                                          str_c("Y",20:34),"H71",
+                                          str_c("X",19:59),
+                                          str_c("Y",10:19),"L95","M10"
+                            )) 
 
 
 
+death_causes_filtered <- filter(death_causes, !(icd_10_code%in%reclasified_codes$icd_10_code))
 
+death_causes_mod <- rbind(death_causes_filtered,reclasified_codes)
 
-
+#Se siguen repitiendo algunos
+ej_1 <- group_by(death_causes_mod, icd_10_code) %>% 
+        count() %>% 
+        filter(n>1)
                                       
 ```
 
@@ -404,12 +297,18 @@ flextable(ej_2)
 ```
 
 
-
 ##*Catálogo de variables*
 No estoy al 100% seguro de lo que representan todas estas variables. Pero en base al contexto y a los documentos que me pasó la dra yanink colocaré las definiciones más probables. También pondré si con alguna si estoy 100% seguro y si con alguna no, etc. 
 
 Aquí estoy incluyendo la versión "limpia" de las variables, con los nuevos nombres que les asigné
 -secuencia:muert
+
+```{r eda mort_mod, include= F}
+
+ggplot(mort_mod, aes(x=as.factor(fecha_defuncion),fill=sexo_biologico))+geom_bar()
+
+
+```
 
 
 
