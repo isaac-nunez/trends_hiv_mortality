@@ -328,58 +328,105 @@ save(mortalidad, file="mortalidad.Rda")
 
 ```
 
+
+#El algoritmo del chunk de abajo funciona, pero no empatan las causas que tengo en death_causes_final y las que tengo en mortalidad. Tengo que enfocarme en hacer que los códigos representen lo mismo.
 ```{r algoritmo para causas de muerte, include = F}
 load("death_causes_final.Rda")
 load("mortalidad.Rda")
+barra_evol <- seq(1000,120000,by=1000)
+
+death_causes_final <- death_causes_final[,code:=icd_10_code][,-c("icd_10_code")]
 
 
 
-
-death_causes_acceptable <- death_causes_final[causa_inaceptable==F][,code:=icd_10_code][,
-                                                                                        -c("causa_inaceptable","icd_10_code")]
-
-barra_evol <- seq(1000,100000,by=1000)
 system.time(
 for(i in 1:nrow(mortalidad)){
         
         if(i==1){
+                prelim <- list()
+        }
                 
            if(any(mortalidad[i,c("code","causa1","causa2","causa3","causa4","causa5",
-                         "causa6")]%in%death_causes_acceptable$icd_10_code)){
-                   prelim <- merge(mortalidad[i,],
-                                   death_causes_acceptable[icd_10_code==mortalidad[i,code]][,-c("icd_10_code")],all=T, by="code")
+                         "causa6")]%in%death_causes_final$code)){
+                   
+                   prelim[[i]] <- merge(mortalidad[i,],
+                                   death_causes_final[code==mortalidad[i,code]],all=T, by="code")
            }else{
  
-                   prelim <- mortalidad[i,][,`:=`(
+                   prelim[[i]] <- mortalidad[i,][,`:=`(
+                           aids_related="",
+                           major_category="",
+                           specific_category="",
+                           causa_inaceptable=NA
+                   )]
+           }
+       
+        
+        if(i%in%barra_evol){
+                print(i)
+        }
+        
+        if(i==nrow(mortalidad)){
+                
+                prelim <<- as.data.table(bind_rows(prelim))
+        }
+}
+)
+
+        
+#Guardé prelim en la última sesión
+save(prelim, file="prelim.Rda")
+```
+
+
+```{r codigo para parear la base de mortalidad con la de códigos icd 10}
+
+
+
+system.time(
+for(i in 1:nrow(ejemplo)){
+        
+        if(i==1){
+                prelim <- list()
+        }
+                
+           if(any(ejemplo[i,c("code","causa1","causa2","causa3","causa4","causa5",
+                         "causa6")]%in%death_causes_acceptable$code)){
+                   
+                   prelim[[i]] <- merge(ejemplo[i,],
+                                   death_causes_acceptable[code==ejemplo[i,code]],all=T, by="code")
+           }else{
+ 
+                   prelim[[i]] <- ejemplo[i,][,`:=`(
                            aids_related="",
                            major_category="",
                            specific_category=""
                    )]
            }
-        }else{
-              if(any(mortalidad[i,c("code","causa1","causa2","causa3","causa4","causa5",
-                         "causa6")]%in%death_causes_acceptable$icd_10_code)){
-                   prelim <- rbind(prelim,
-                                   merge(mortalidad[i,],
-                                   death_causes_acceptable[icd_10_code==mortalidad[i,code]][,-c("icd_10_code")],all=T,by="code"))     
-                }else{
-                        prelim <- rbind(prelim,mortalidad[i,][,`:=`(
-                           aids_related="",
-                           major_category="",
-                           specific_category=""
-                   )])
-                        
-                }   
-        }
-               if(i==nrow(mortalidad)){
-        prelim<<-prelim               
-               }
+       
         
         if(i%in%barra_evol){
                 print(i)
         }
+        
+        if(i==nrow(ejemplo)){
+                
+                prelim_fin <- bind_rows(prelim)
+        }
 }
 )
-        
-#Guardé prelim en la última sesión
+
+
+lista <- list()
+
+lista[[1]] <- data.table(perro=1)
+lista[[2]] <- data.table(perro=2)
+
+
+lista_ej <- unlist(lista)
+
+rbind(get(str_c("perro_",1)),get(str_c("perro_",2)))
+
+
 ```
+
