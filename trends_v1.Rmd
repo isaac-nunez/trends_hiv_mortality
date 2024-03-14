@@ -80,38 +80,49 @@ str_c("N",17:19), str_c("R",570:572), "R578")
         
 ```
 
+Cambios relevantes hasta ahora:
+-He puesto todas las de herpes simplex en la categoría de aids defining
+-He puesto todas las infecciones virales que no caben en aids defining dentro de non_aids other_sepsis
+-He puesto todas las infecciones fúngicas que no caben en aids defining dentro de non_aids other_sepsis
+-He puesto todas las infecciones parasitarias que no caben en aids defining dentro de non_aids other_sepsis
+->Para los tres puntos previos, considerar crear una categoría para infecciones virales, otra para infecciones fúngicas y otra para parásitos dentro de non_aids
+-Las de secuela de tuberculosis las puse dentro de aids_deaths tuberculosis, asumiendo que pudo ser clasificación errónea al momento de meter los datos
+-Las neoplasias misceláneas las puse dentro de non_aids_deaths non_aids_malignancies
+-Todas las neoplasias de cervix o útero las puse como aids defining
+
 ```{r coding causes of death into simplified categories as lists, include = F, eval=T}
 
 aids_deaths <- list(pneumonia_recurrent=list(unspecified_pneumonia=c( str_c("J0",0:6), "J12", "J128", "J129", "J158", "J159", "J168", "J170", "J18", "J208", "J209", "J219", "J22", "J40", "J80", "J81", str_c("J",850:852), "J86", "J960", "J967", "J969", "J988", "R06", "R09")),
-                            tuberculosis=list(tuberculosis=str_c("A",15:19)),
+                            tuberculosis=list(tuberculosis=c(str_c("A",15:19),"A162","A164", "A169", "A170", "A179", "A182", "A183", "A188", "A199", "B020","B90","B909")),
                             opportunistic_infections=list(pneumocystis=c("B206", "B59"),
                                                           coccidioidomycosis=c("B38", "A073"),
                                                           cryptosporidiosis="A07.2",
                                                           toxoplasmosis=c("B580", "B581", "B582", "B583", "B588", "B589", "G052", "H320"),
-                                                          cryptococcosis="B45.X",
+                                                          cryptococcosis=c("B45.X","B451","B453", "B457", "B459"),
                                                           encephalopathy=c("A811", "A85", "A86", "A87", "A89", "B220", "B582", "G051"),
                                                           candidiasis=c("B37.1", "B379", "B204", "B375"),
                                                           histoplasmosis=c("B39.2", "B393", "B394", "B399"),
-                                                          cytomegalovirus=c("B202", "B25"),
+                                                          cytomegalovirus=c("B202", "B25","B250","B258"),
                                                           leukoencephalopathy="A812",
                                                           mycobacterium_avium_complex="A31",
                                                           salmonella=c("A01","A02", "B201", "M013"),
-                                                          herpes_simplex=c("A60", "B00")
+                                                          herpes_simplex=c("A60", "B00", "B004", "B009")#Voy a incluir aquí por mientras todas las infecciones por herpes que pudieron resultar en la muerte de la persona
                                                           ),
-                            aids_malignancies=list(aids_degining_cancers=c("B21", "B211", "B212", "B213", "B217", "B218", "B219"),
-                                                   kaposi_sarcoma=c("B210", "C46")),
+                            aids_malignancies=list(aids_defining_cancers=c("B21", "B211", "B212", "B213", "B217", "B218", "B219","C539","C55"),
+                                                   kaposi_sarcoma=c("B210", "C46","C463","C467","c469")),
                             other=list(wasting=c("B222", "E43"),
-                                       unspecified_hiv=c("B22", "B24"),
-                                       aids_other=c("B207", "B208", "B209", "B20X", "B227", "B23", "B333", "B89X", "M016", "M018", "R75"))
+                                       unspecified_hiv=c("B20","B22", "B24"),
+                                       aids_other=c("B207", "B208", "B209", "B20X", "B227", "B23", "B333", "B89X", "M016", "M018", "R75","B203","B205","B221","B230","B231", "B232","B238"))
                             )
 
 non_aids_deaths <- list(non_aids_infectious_diseases=list(
         bacterial_sepsis=c("A40", "A41", "A42", "A24", "P368", "P369"),
-        other_sepsis=c("A41", "R579"),
+        other_sepsis=c("A41", "R579", "A064", "A09", "A419", "A90", "A91", "A97", "B018","B019", "B021", "B029", "B04", "B162", "B169", "B17", "B180", "B181", "B260","B268","B270","B370","B377",
+                       "B382","B410","B449", "B49","B508","B538","B54", "B690","B699","B89","B941","B948","B99"),#Aquí estoy metiendo a otras infecciones virales que no son AIDS defining
         non_aids_respiratory_infection=c("B402", "B953", "B960", "J09", "J10", "J11", "J120", 
                                          "J121", "J122", "J123", "J13", "J14", str_c("J",150:157),
                                          "J160", "J17.8", str_c("J",200:207)),
-        various_bacterial_infections=c("A00", str_c("A0",40:47), "A05", str_c("A",20:28), "A36", "A390",
+        various_bacterial_infections=c("A00", "A021",str_c("A0",40:48), "A05", str_c("A",20:28), "A36", "A390",
                                        str_c("A",398:399), "A42", "A43", "A44", "A49", str_c("A",51:53),
                                        "B95", str_c("B",961:969), "G00", str_c("I0",0:2), "I30", "I33",
                                        "I38", "I430", "I520", "I521", "I80", "K122", "K61", "K630",
@@ -120,7 +131,8 @@ non_aids_deaths <- list(non_aids_infectious_diseases=list(
                                        "M491", "M492", "M600", "M609", "M650", "M651", "M710", "M711",
                                        "M86", "M901", "M902", "N10", "N151", "N160", "N290", "N300",
                                        "N34", "N390", "N41", "N45", "N49", "N51", "N61",
-                                       str_c("N",70:77), "R02", "R100", "R104", "R30", "R36", "R50")
+                                       str_c("N",70:77), "R02", "R100", "R104", "R30", "R36", "R50",
+                                       "A270", "A279")#Aquí están los agregados de otras sepsis
 ),
 liver_diseases=list(liver_failure=c("B189", "B199", "B942", "I85", "I864", "I982", "I983"),
                     hepatitis=c("B182", "B170", "B171", "B16")),
@@ -136,14 +148,15 @@ non_vascular_neurologic_diseases=list(
         other_ns_disorders=c("G43", "G44", "G47", "G52", "G90", "G937", "G938", "M494", str_c("R",25:29), "R43"),
         neuromuscular=str_c("G", 70:73)
 ),
-mental_health=list(substance_abuse=c(str_c("F",11:19, "G620", "G92")),
+mental_health=list(substance_abuse=c(str_c("F",11:19), "G620", "G92"),
                    alcohol_abuse=c("F10", "G312", "G621", "K70", "K860"),
                    psychiatric_disease=c(str_c("F",20:29), str_c("F",30:39), str_c("F",40:48), str_c("F",50:55), str_c("F",60:99), "R45", "R46", "R636"),
                    suicide=str_c("X", 60:84)
 ),
 non_aids_malignancies=list(
-        general_malignancies=c("C17", "C26", "C37", "C38", "C44", "C45", "C47", "C48", "C63", str_c("C",73:76), "C784", "C786", "C788", "C792", str_c("C",797:799), str_c("D0",0:9), str_c("D",10:48), "C80", "I871", "N161"),
-        colon_cancer="C18"
+        general_malignancies=c("C17", "C26", "C37", "C38", "C44", "C45", "C47", "C48", "C63", str_c("C",73:76), "C784", "C786", "C788", "C792", str_c("C",797:799), str_c("D0",0:9), str_c("D",10:48), "C80", "I871", "N161","C01","C059","C069","C099","C140","C159","C160","C161","C162","C169","C171","C172","C210","C211","C212","C218","C220","C221","C229","C23","C240","C249","C250","C252","C259","C260",
+                               "C261","C269","C321","C329","C33","C340","C349","C383","C399","C409","C410","C419","C439","C443","C445","C449","C480","C482","C488","C494","C499","C509"),
+        colon_cancer=c("C18","C184","C187","C189","C19","C20")
 ),
 gastrointestinal_disorders=list(
         miscelaneous_digestive_disorders=c(str_c("K0",0:9), "K10", "K21", "K22", "K238", str_c("K",26:31), str_c("K",35:38), str_c("K",40:46), "K50", str_c("K",510:518), "K52", "K55", "K560", "K562", str_c("K", 563:565), "K566", "K567", "K57", "K58", "K59", "K60", "K62", "K634", "K635", "K638", "K639", "K64", "K66", "K870", "K900", "K902", "K904", "K908", "K909", "K938", "R101", "R103", str_c("R", 11:15), str_c("R",191:198), str_c("R", 20:23)
@@ -346,8 +359,74 @@ for(i in 1:nrow(mortalidad)){
                 prelim <- list()
         }
                 
-           if(any(mortalidad[i,c("code","causa1","causa2","causa3","causa4","causa5",
+         if(any(mortalidad[i,c("code","causa1","causa2","causa3","causa4","causa5",
                          "causa6")]%in%death_causes_final$code)){
+                   
+                   prelim[[i]] <- merge(mortalidad_mod[i,],
+                                   death_causes_final_mod[code_mod==mortalidad_mod[i,code_mod]],all=T, by="code")
+           }else{
+ 
+                   prelim[[i]] <- mortalidad_mod[i,][,`:=`(
+                           aids_related="",
+                           major_category="",
+                           specific_category="",
+                           causa_inaceptable=NA
+                   )]
+           }
+       
+        
+        if(i%in%barra_evol){
+                print(i)
+        }
+        
+        if(i==nrow(mortalidad)){
+                
+                prelim <<- as.data.table(bind_rows(prelim))
+        }
+}
+)
+
+
+#Guardé prelim en la última sesión
+save(prelim, file="prelim_ej.Rda")
+```
+
+#No queda otra mas que parear todos los códigos inviduales. Cuando los trato de parear solo por como inician los resultados no son confiables.
+
+
+```{r eda, include = F}
+
+prelim_mod <- group_by(prelim, code_mod) %>% 
+        slice(1)
+
+```
+
+```{r codigo para parear la base de mortalidad con la de códigos icd 10}
+code_no_detectado <- prelim[is.na(causa_inaceptable)] %>%
+        group_by(code) %>% 
+        count()
+
+code_no_detectado <- code_no_detectado$code
+
+
+#Código que funciona 
+
+
+system.time(
+for(i in 1:nrow(mortalidad)){
+        
+        if(i==1){
+                prelim <- list()
+        }
+                
+           if(#Este cambio es para usar startswith
+                   
+                   any(mortalidad[i,c("code","causa1","causa2","causa3","causa4","causa5",
+                         "causa6")]%in%death_causes_final$code)
+                   
+                   
+                   
+                   ){
                    
                    prelim[[i]] <- merge(mortalidad[i,],
                                    death_causes_final[code==mortalidad[i,code]],all=T, by="code")
@@ -372,14 +451,6 @@ for(i in 1:nrow(mortalidad)){
         }
 }
 )
-
-        
-#Guardé prelim en la última sesión
-save(prelim, file="prelim.Rda")
-```
-
-
-```{r codigo para parear la base de mortalidad con la de códigos icd 10}
 
 
 
